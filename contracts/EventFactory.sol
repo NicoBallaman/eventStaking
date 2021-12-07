@@ -1,4 +1,5 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
 
 contract EventFactory {
     enum EventState { Initial, Created, Started, Canceled, Finished }
@@ -13,12 +14,11 @@ contract EventFactory {
     struct Event {
         bytes name;
         address speaker;
-        TiketType[] tiketTypes;
     }
     
     struct Tiket {
         uint32 price;
-        TiketType tiketType;
+        uint tiketTypeId;
     }
 
     address eventOwner;
@@ -38,9 +38,13 @@ contract EventFactory {
     }
 
     function createEvent(bytes memory _name, address _speaker) onlyOwner eventStateIs(EventState.Initial) external {
-        currentEvent = Event(_name, _speaker, new TiketType[](0));
+        currentEvent = Event(_name, _speaker);
         changeStateEvent(EventState.Initial);
         emit eventCreated(_name, _speaker);
+    }
+
+    function showUp() onlyOwner eventStateIs(EventState.Created) external {
+        changeStateEvent(EventState.Started);
     }
 
     function changeStateEvent(EventState newState) internal {

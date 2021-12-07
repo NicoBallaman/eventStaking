@@ -1,23 +1,47 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
 
 import "./EventFactory.sol";
 
 contract EventManager is EventFactory {
-    Tiket[] availabletikets;
+    enum TiketStatus { Available, Consumed, Locked }
+    uint lastTiketId = 0;
+    uint tiketPrice = 0;
+    mapping (uint => TiketStatus) tiketsStatus;
     mapping (uint => address) tiketToOwner;
-    mapping (address => uint[]) viewers;
+    mapping (address => uint[]) ownerToTikets;
 
     event addedTikets(bytes name, uint256 price, uint256 maxCapacity);
+    event tiketSold(uint tiketId, address buyer);
+    event tiketConsumed(uint tiketId, address viewer);
+    event tiketLocked(uint tiketId, address viewer);
     
-    function addTiketType(bytes memory name, uint256 price, uint256 maxCapacity) onlyOwner eventStateIs(EventState.Created) external {
-        TiketType memory tiketType = TiketType(name, price, maxCapacity, 0);
-        currentEvent.tiketTypes.push(tiketType);
-        emit addedTikets(name, price, maxCapacity);
+
+    constructor(uint _tiketPrice){
+        tiketPrice = _tiketPrice;
+    }
+    
+
+    function buyTiket() eventStateIs(EventState.Created) payable external {
+        require(tiketPrice == msg.value);
+        lastTiketId = lastTiketId + 1;
+        tiketsStatus[lastTiketId] = TiketStatus.Available;
+        tiketToOwner[lastTiketId] = msg.sender;
+        ownerToTikets[msg.sender].push(lastTiketId);
+        emit tiketSold(lastTiketId, msg.sender);
     }
 
-    function showUp() onlyOwner eventStateIs(EventState.Created) external {
-        require(currentEvent.tiketTypes.length > 0, "The event needs to have at least one topic.");
-        changeStateEvent(EventState.Started);
+    function consumeTiket(uint tiketId, address viewer) onlyOwner eventStateIs(EventState.Created) external {
+        require(tiketsStatus[tiketId] == TiketStatus.Available);
+        require(tiketToOwner[tiketId] == viewer);
+        tiketsStatus[tiketId] = TiketStatus.Consumed;
+        emit tiketConsumed(tiketId, viewer);
+    }
+
+    function lockTiket(uint tiketId) onlyOwner eventStateIs(EventState.Created) external {
+        require(tiketsStatus[tiketId] == TiketStatus.Available);
+        tiketsStatus[tiketId] = TiketStatus.Consumed;
+        emit tiketLocked(tiketId, tiketToOwner[tiketId]);
     }
     
     function finalizeEvent() onlyOwner eventStateIs(EventState.Started) external {
@@ -26,8 +50,8 @@ contract EventManager is EventFactory {
     }
     
     function cancelEvent() onlyOwner eventStateIs(EventState.Created) external {
-        changeStateEvent(EventState.Canceled);
         // distribute rewards
+        changeStateEvent(EventState.Canceled);
     }
     
     modifier onlyOwnerOf(uint tiketId){

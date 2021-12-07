@@ -1,8 +1,9 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
 
 import "./EventManager.sol";
 
-contract EventTiketsOwnership is EventManager {
+abstract contract EventTiketsOwnership is EventManager {
     
     mapping (uint => address) tiketsApprovals;
 
@@ -10,7 +11,7 @@ contract EventTiketsOwnership is EventManager {
     event Approval(address owner, address aproved, uint256 tokenId);
     
     function balanceOf(address _owner) external view returns (uint256[] memory) {
-        return viewers[_owner];
+        return ownerToTikets[_owner];
     }
 
     function ownerOf(uint256 _tokenId) external view returns (address) {        
@@ -19,8 +20,8 @@ contract EventTiketsOwnership is EventManager {
 
     function _transfer(address _from, address _to, uint256 _tokenId) private {
         requiredState(EventState.Created);
-        _remove(_tokenId, viewers[_from]);
-        viewers[_to].push(_tokenId);
+        _remove(_tokenId, ownerToTikets[_from]);
+        ownerToTikets[_to].push(_tokenId);
         tiketToOwner[_tokenId] = _to;
         emit Transfer(_from, _to, _tokenId);
     }
