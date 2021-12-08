@@ -40,18 +40,26 @@ contract EventManager is EventFactory {
 
     function lockTiket(uint tiketId) onlyOwner eventStateIs(EventState.Created) external {
         require(tiketsStatus[tiketId] == TiketStatus.Available);
-        tiketsStatus[tiketId] = TiketStatus.Consumed;
+        tiketsStatus[tiketId] = TiketStatus.Locked;
         emit tiketLocked(tiketId, tiketToOwner[tiketId]);
     }
     
     function finalizeEvent() onlyOwner eventStateIs(EventState.Started) external {
         // distribute rewards
+        uint totalAmount = (lastTiketId * tiketPrice) / 2;
+        payable(eventOwner).transfer(totalAmount);
+        payable(currentEvent.speaker).transfer(totalAmount);
         changeStateEvent(EventState.Finished);
+        selfdestruct(payable(eventOwner));
     }
     
     function cancelEvent() onlyOwner eventStateIs(EventState.Created) external {
         // distribute rewards
+        for(uint i=1; i <= lastTiketId; i++) {
+            payable(tiketToOwner[i]).transfer(tiketPrice);
+        }
         changeStateEvent(EventState.Canceled);
+        selfdestruct(payable(eventOwner));
     }
     
     modifier onlyOwnerOf(uint tiketId){
