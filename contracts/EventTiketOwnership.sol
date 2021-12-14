@@ -3,8 +3,8 @@ pragma solidity ^0.8.4;
 
 import "./EventManager.sol";
 
-abstract contract EventTiketsOwnership is EventManager {
-    
+contract EventTiketsOwnership is ERC721, EventManager {
+
     mapping (uint => address) tiketsApprovals;
 
     event Transfer(address from, address to, uint256 tokenId);
@@ -46,4 +46,5 @@ abstract contract EventTiketsOwnership is EventManager {
         }
         delete _array[index];
     }
+
 }
