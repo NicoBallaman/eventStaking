@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/NicoBallaman/eventStaking#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.4.1"
+    "@openzeppelin/contracts": "^4.4.1",
+    "truffle-flattener": "^1.5.0"
   }
 }
